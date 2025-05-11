@@ -37,23 +37,24 @@ la trazabilidad y persistencia del histórico.
 proyecto_integrado_v_aval_tracker/
 ├── .github/
 │   └── workflows/
-│       └── update_data.yml          # Flujo automático de actualización con GitHub Actions
+│       └── update_data.yml          # Flujo automático con GitHub Actions
 │
 ├── docs/
-│   └── report_entrega1.pdf          # Informe académico en formato APA
+│   └── report_entrega1.pdf          # Informe en formato APA
 │
 ├── src/
-│   ├── collector.py                 # Descarga y persistencia de datos
-│   ├── logger.py                    # Configuración del logger general (archivo .log)
-│   ├── csv_logger.py                # Logger especializado para escribir en log_data.csv
+│   ├── collector.py                 # Script principal de recolección de datos
+│   ├── logger.py                    # Logger general (.log)
+│   ├── csv_logger.py                # Logger estructurado (log_data.csv)
 │   ├── static/
-│   │   └── historical.csv           # Datos históricos de AVAL
+│   │   └── data/
+│   │       └── historical.csv       # Archivo CSV con datos históricos actualizados
 │   └── logs/
-│       ├── log_data.csv             # Log estructurado de ejecuciones (formato CSV)
+│       ├── log_data.csv             # Log central en formato CSV
 │       └── text_logs/
 │           └── aval_analysis_YYYYMMDD_HHMMSS.log  # Logs detallados por ejecución
 │
-├── setup.py                         # Script de instalación como paquete Python
+├── setup.py                         # Script de instalación como paquete
 ├── README.md
 └── .gitignore
 ```

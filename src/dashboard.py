@@ -28,7 +28,7 @@ METRICS_PATH = os.path.join('src', 'static', 'models', 'metrics.csv')
 @st.cache_data
 def load_data():
     df = pd.read_csv(DATA_PATH)
-    df['Date'] = pd.to_datetime(df['Date']), errors='coerce').dt.floor('ms')
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce').dt.floor('ms')
     return df
 
 try:

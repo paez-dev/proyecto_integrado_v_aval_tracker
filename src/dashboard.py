@@ -196,7 +196,12 @@ except Exception as e:
 # Información adicional
 with st.expander("ℹ️ Información del Dataset"):
     st.write("Estadísticas Descriptivas:")
-    st.dataframe(df.describe())
-    
+    # Crear una copia del DataFrame sin la columna Date para mostrar estadísticas
+    stats_df = df.drop(columns=['Date']).describe()
+    st.dataframe(stats_df)
+
     st.write("Últimos Registros:")
-    st.dataframe(df.tail())
+    # Convertir la columna Date a string antes de mostrarla
+    display_df = df.copy()
+    display_df['Date'] = display_df['Date'].dt.strftime('%Y-%m-%d')
+    st.dataframe(display_df.tail())

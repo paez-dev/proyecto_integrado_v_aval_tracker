@@ -4,11 +4,12 @@ import plotly.graph_objects as go
 import joblib
 import os
 import numpy as np
+import warnings
+from statsmodels.tsa.arima.model import ARIMA
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Rutas relativas
-DATA_PATH = os.path.join('src', 'static', 'data', 'enriched_historical.csv')
-MODEL_PATH = os.path.join('src', 'static', 'models', 'arima_model.pkl')
-METRICS_PATH = os.path.join('src', 'static', 'models', 'arima_metrics.csv')
+data_path = os.path.join('src', 'static', 'data', 'enriched_historical.csv')
 
 st.set_page_config(
     page_title="AVAL Stock Analysis Dashboard",
@@ -21,7 +22,7 @@ st.title("📊 AVAL Stock Analysis Dashboard (ARIMA)")
 # Cargar datos enriquecidos
 @st.cache_data
 def load_data():
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(data_path)
     df['Date'] = pd.to_datetime(df['Date'])
     return df
 
@@ -50,7 +51,6 @@ show_vol = st.sidebar.checkbox("Mostrar Volatilidad (7d)", value=False)
 show_volume = st.sidebar.checkbox("Mostrar Volumen", value=False)
 
 # --- MANEJO ROBUSTO DEL RANGO DE FECHAS ---
-# date_range puede ser una lista/tupla de 2 fechas o una sola fecha
 if isinstance(date_range, (list, tuple)) and len(date_range) == 2:
     start_date, end_date = date_range
 elif isinstance(date_range, (pd.Timestamp, )):
@@ -276,40 +276,51 @@ with tabs[2]:
 
 # --- TAB 4: Métricas y Predicción ---
 with tabs[3]:
-    st.subheader("Predicción ARIMA y Métricas del Modelo")
+    st.subheader("Predicción ARIMA y Métricas del Modelo (Dinámicas)")
     try:
         serie = df_filtrado.set_index('Date')['Adj Close AVAL'].dropna()
-        # Asegura que el índice es de fechas
         if not isinstance(serie.index, pd.DatetimeIndex):
             serie.index = pd.to_datetime(serie.index)
-        if len(serie) < 10:
-            st.info("Selecciona un rango de fechas mayor para realizar la predicción ARIMA.")
+        # Validación robusta del rango
+        if len(serie) < 20:
+            st.info("Selecciona un rango de fechas mayor (mínimo 20 datos) para realizar la predicción y calcular métricas ARIMA.")
         else:
-            arima_model = joblib.load(MODEL_PATH)
-            forecast = arima_model.forecast(steps=1)
+            with st.spinner("Entrenando ARIMA con el rango seleccionado..."):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    arima_temp = ARIMA(serie, order=(3,1,1)).fit()
+                # Predicción para el siguiente día hábil
+                forecast = arima_temp.forecast(steps=1)
             last_date = serie.index[-1]
             next_date = last_date + pd.Timedelta(days=1)
-            if next_date.weekday() == 5:
-                next_date += pd.Timedelta(days=2)
-            elif next_date.weekday() == 6:
+            while next_date.weekday() >= 5:
                 next_date += pd.Timedelta(days=1)
             st.success(f"Predicción para el {next_date.date()}: **${forecast.values[0]:.4f}**")
+
+            # Métricas dinámicas (usando el ajuste in-sample)
+            pred = arima_temp.predict(start=serie.index[1], end=serie.index[-1], typ='levels')
+            y_true = serie[1:]
+            y_pred = pred
+
+            mae = mean_absolute_error(y_true, y_pred)
+            rmse = mean_squared_error(y_true, y_pred, squared=False)
+            mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+            r2 = r2_score(y_true, y_pred)
+
+            st.markdown("#### Métricas del Modelo ARIMA (para el rango seleccionado)")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("MAE", f"{mae:.4f}")
+            with col2:
+                st.metric("RMSE", f"{rmse:.4f}")
+            with col3:
+                st.metric("MAPE", f"{mape:.2f}%")
+            with col4:
+                st.metric("R²", f"{r2:.4f}")
     except Exception as e:
         st.info("No se pudo realizar la predicción ARIMA para el rango seleccionado.")
-    try:
-        metrics = pd.read_csv(METRICS_PATH)
-        st.markdown("#### Métricas del Modelo ARIMA")
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("MAE", f"{metrics['MAE'].iloc[0]:.4f}")
-        with col2:
-            st.metric("RMSE", f"{metrics['RMSE'].iloc[0]:.4f}")
-        with col3:
-            st.metric("MAPE", f"{metrics['MAPE'].iloc[0]:.2f}%")
-        with col4:
-            st.metric("R²", f"{metrics['R2'].iloc[0]:.4f}")
-    except Exception as e:
-        st.info("No se pudieron cargar las métricas del modelo ARIMA.")
+        st.exception(e)
+
     with st.expander("ℹ️ Información del Dataset"):
         st.write("Estadísticas Descriptivas:")
         stats_df = df_filtrado.drop(columns=['Date']).describe()

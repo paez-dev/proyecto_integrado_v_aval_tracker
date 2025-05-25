@@ -9,7 +9,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def cargar_datos_limpios(ruta_archivo='historical.csv'):
+def cargar_datos_limpios(ruta_archivo='enriched_historical.csv'):
     """
     Carga el CSV, elimina filas de cabecera repetidas y asegura que el índice sea de fechas.
     """

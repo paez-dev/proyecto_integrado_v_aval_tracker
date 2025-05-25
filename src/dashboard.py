@@ -64,33 +64,45 @@ with tabs[0]:
         close=df_filtrado['Close AVAL'],
         name='OHLC'
     ))
+    # SMA 21
     if show_sma21 and 'SMA_21' in df_filtrado:
-        fig.add_trace(go.Scatter(
-            x=df_filtrado['Date'],
-            y=df_filtrado['SMA_21'],
-            name='SMA 21',
-            line=dict(color='orange')
-        ))
+        if len(df_filtrado) < 21:
+            st.info("Selecciona al menos 21 días para ver la SMA 21.")
+        else:
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['SMA_21'],
+                name='SMA 21',
+                line=dict(color='orange')
+            ))
+    # SMA 50
     if show_sma50 and 'SMA_50' in df_filtrado:
-        fig.add_trace(go.Scatter(
-            x=df_filtrado['Date'],
-            y=df_filtrado['SMA_50'],
-            name='SMA 50',
-            line=dict(color='green')
-        ))
+        if len(df_filtrado) < 50:
+            st.info("Selecciona al menos 50 días para ver la SMA 50.")
+        else:
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['SMA_50'],
+                name='SMA 50',
+                line=dict(color='green')
+            ))
+    # Bandas de Bollinger
     if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado:
-        fig.add_trace(go.Scatter(
-            x=df_filtrado['Date'],
-            y=df_filtrado['BB_upper'],
-            name='Banda Superior',
-            line=dict(color='lightblue', dash='dot')
-        ))
-        fig.add_trace(go.Scatter(
-            x=df_filtrado['Date'],
-            y=df_filtrado['BB_lower'],
-            name='Banda Inferior',
-            line=dict(color='lightblue', dash='dot')
-        ))
+        if len(df_filtrado) < 21:
+            st.info("Selecciona al menos 21 días para ver las Bandas de Bollinger.")
+        else:
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['BB_upper'],
+                name='Banda Superior',
+                line=dict(color='lightblue', dash='dot')
+            ))
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['BB_lower'],
+                name='Banda Inferior',
+                line=dict(color='lightblue', dash='dot')
+            ))
     fig.update_layout(
         template='plotly_dark',
         xaxis_title='Fecha',
@@ -108,7 +120,9 @@ with tabs[1]:
     if show_rsi and 'RSI' in df_filtrado:
         with col1:
             rsi = df_filtrado['RSI'].dropna()
-            if not rsi.empty:
+            if len(rsi) < 14:
+                st.info("Selecciona al menos 14 días para ver el RSI.")
+            elif not rsi.empty:
                 st.metric("RSI", f"{rsi.iloc[-1]:.2f}")
                 with st.expander("¿Qué es el RSI?"):
                     st.write("Mide la fuerza y velocidad de los movimientos de precio. Sobre 70: sobrecompra. Bajo 30: sobreventa.")
@@ -122,7 +136,9 @@ with tabs[1]:
     if show_momentum and 'Momentum' in df_filtrado:
         with col2:
             mom = df_filtrado['Momentum'].dropna()
-            if not mom.empty:
+            if len(mom) < 10:
+                st.info("Selecciona al menos 10 días para ver el Momentum.")
+            elif not mom.empty:
                 st.metric("Momentum", f"{mom.iloc[-1]:.4f}")
                 with st.expander("¿Qué es el Momentum?"):
                     st.write("Mide la velocidad del cambio de precio. Positivo: tendencia alcista. Negativo: bajista.")
@@ -136,7 +152,9 @@ with tabs[1]:
     if show_vol and 'Volatility_7' in df_filtrado:
         with col3:
             vol = df_filtrado['Volatility_7'].dropna()
-            if not vol.empty:
+            if len(vol) < 7:
+                st.info("Selecciona al menos 7 días para ver la Volatilidad (7d).")
+            elif not vol.empty:
                 st.metric("Volatilidad (7d)", f"{vol.iloc[-1]:.4f}")
                 with st.expander("¿Qué es la Volatilidad?"):
                     st.write("Desviación estándar móvil de 7 días.")
@@ -147,7 +165,7 @@ with tabs[1]:
                 else:
                     st.info("Volatilidad moderada.")
     # Gráficos individuales
-    if show_rsi and 'RSI' in df_filtrado:
+    if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14:
         fig_rsi = go.Figure()
         fig_rsi.add_trace(go.Scatter(
             x=df_filtrado['Date'],
@@ -159,7 +177,7 @@ with tabs[1]:
         fig_rsi.add_hline(y=30, line_dash="dash", line_color="green")
         fig_rsi.update_layout(template='plotly_dark', yaxis_title='RSI', height=200)
         st.plotly_chart(fig_rsi, use_container_width=True)
-    if show_momentum and 'Momentum' in df_filtrado:
+    if show_momentum and 'Momentum' in df_filtrado and len(df_filtrado) >= 10:
         fig_mom = go.Figure()
         fig_mom.add_trace(go.Scatter(
             x=df_filtrado['Date'],
@@ -169,7 +187,7 @@ with tabs[1]:
         ))
         fig_mom.update_layout(template='plotly_dark', yaxis_title='Momentum', height=200)
         st.plotly_chart(fig_mom, use_container_width=True)
-    if show_vol and 'Volatility_7' in df_filtrado:
+    if show_vol and 'Volatility_7' in df_filtrado and len(df_filtrado) >= 7:
         fig_vol = go.Figure()
         fig_vol.add_trace(go.Scatter(
             x=df_filtrado['Date'],
@@ -194,18 +212,21 @@ with tabs[2]:
     st.subheader("Resumen de Señales de Trading")
     # Cruce de medias móviles
     if show_sma21 and show_sma50 and 'SMA_21' in df_filtrado and 'SMA_50' in df_filtrado:
-        sma21 = df_filtrado['SMA_21']
-        sma50 = df_filtrado['SMA_50']
-        cruces = np.where((sma21.shift(1) < sma50.shift(1)) & (sma21 > sma50), "Compra",
-                          np.where((sma21.shift(1) > sma50.shift(1)) & (sma21 < sma50), "Venta", None))
-        cruces_idx = df_filtrado.index[~pd.isnull(cruces)]
-        if len(cruces_idx) > 0:
-            last_idx = cruces_idx[-1]
-            st.info(f"Última señal de cruce de medias: {df_filtrado.loc[last_idx, 'Date'].date()} → **{cruces[last_idx]}**")
+        if len(df_filtrado) < 51:
+            st.info("Selecciona al menos 51 días para ver señales de cruce de medias móviles.")
         else:
-            st.write("No hay señales recientes de cruce de medias.")
+            sma21 = df_filtrado['SMA_21']
+            sma50 = df_filtrado['SMA_50']
+            cruces = np.where((sma21.shift(1) < sma50.shift(1)) & (sma21 > sma50), "Compra",
+                              np.where((sma21.shift(1) > sma50.shift(1)) & (sma21 < sma50), "Venta", None))
+            cruces_idx = df_filtrado.index[~pd.isnull(cruces)]
+            if len(cruces_idx) > 0:
+                last_idx = cruces_idx[-1]
+                st.info(f"Última señal de cruce de medias: {df_filtrado.loc[last_idx, 'Date'].date()} → **{cruces[last_idx]}**")
+            else:
+                st.write("No hay señales recientes de cruce de medias.")
     # RSI sobrecompra/sobreventa
-    if show_rsi and 'RSI' in df_filtrado:
+    if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14:
         rsi = df_filtrado['RSI']
         sobrecompra = rsi[rsi > 70]
         sobreventa = rsi[rsi < 30]
@@ -214,7 +235,7 @@ with tabs[2]:
         if not sobreventa.empty:
             st.success(f"Última sobreventa RSI: {df_filtrado.loc[sobreventa.index[-1], 'Date'].date()} (RSI={sobreventa.iloc[-1]:.2f})")
     # Bandas de Bollinger
-    if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado:
+    if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado and len(df_filtrado) >= 21:
         precio = df_filtrado['Adj Close AVAL']
         bb_upper = df_filtrado['BB_upper']
         bb_lower = df_filtrado['BB_lower']

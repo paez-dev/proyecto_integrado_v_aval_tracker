@@ -222,11 +222,11 @@ with tabs[1]:
         ))
         fig_vol.update_layout(template='plotly_dark', yaxis_title='Volatilidad (7d)', height=200)
         st.plotly_chart(fig_vol, use_container_width=True)
-    if show_volume and 'Volume_AVAL' in df_filtrado and not df_filtrado['Volume_AVAL'].dropna().empty:
+    if show_volume and 'Volume AVAL' in df_filtrado and not df_filtrado['Volume AVAL'].dropna().empty:
         fig_volu = go.Figure()
         fig_volu.add_trace(go.Bar(
             x=df_filtrado['Date'],
-            y=df_filtrado['Volume_AVAL'],
+            y=df_filtrado['Volume AVAL'],
             name='Volumen'
         ))
         fig_volu.update_layout(template='plotly_dark', yaxis_title='Volumen', height=200)

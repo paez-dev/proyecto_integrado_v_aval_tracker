@@ -133,63 +133,89 @@ with tabs[0]:
 
 # --- TAB 2: Indicadores ---
 with tabs[1]:
-    st.subheader("Indicadores Técnicos")
-    col1, col2, col3 = st.columns(3)
-    # RSI
-    if show_rsi and 'RSI' in df_filtrado:
-        with col1:
-            rsi = df_filtrado['RSI'].dropna()
-            if len(rsi) < 14:
-                st.info("Selecciona al menos 14 días para ver el RSI.")
-            elif rsi.empty:
-                st.info("No hay datos suficientes para mostrar el RSI.")
-            else:
-                st.metric("RSI", f"{rsi.iloc[-1]:.2f}")
-                with st.expander("¿Qué es el RSI?"):
-                    st.write("Mide la fuerza y velocidad de los movimientos de precio. Sobre 70: sobrecompra. Bajo 30: sobreventa.")
-                if rsi.iloc[-1] > 70:
-                    st.warning("RSI alto: posible sobrecompra.")
-                elif rsi.iloc[-1] < 30:
-                    st.success("RSI bajo: posible sobreventa.")
-                else:
-                    st.info("RSI en zona neutral.")
-    # Momentum
-    if show_momentum and 'Momentum' in df_filtrado:
-        with col2:
-            mom = df_filtrado['Momentum'].dropna()
-            if len(mom) < 10:
-                st.info("Selecciona al menos 10 días para ver el Momentum.")
-            elif mom.empty:
-                st.info("No hay datos suficientes para mostrar el Momentum.")
-            else:
-                st.metric("Momentum", f"{mom.iloc[-1]:.4f}")
-                with st.expander("¿Qué es el Momentum?"):
-                    st.write("Mide la velocidad del cambio de precio. Positivo: tendencia alcista. Negativo: bajista.")
-                if mom.iloc[-1] > 0:
-                    st.success("Momentum positivo: tendencia alcista.")
-                elif mom.iloc[-1] < 0:
-                    st.error("Momentum negativo: tendencia bajista.")
-                else:
-                    st.info("Momentum neutro.")
-    # Volatilidad
-    if show_vol and 'Volatility_7' in df_filtrado:
-        with col3:
-            vol = df_filtrado['Volatility_7'].dropna()
-            if len(vol) < 7:
-                st.info("Selecciona al menos 7 días para ver la Volatilidad (7d).")
-            elif vol.empty:
-                st.info("No hay datos suficientes para mostrar la Volatilidad.")
-            else:
-                st.metric("Volatilidad (7d)", f"{vol.iloc[-1]:.4f}")
-                with st.expander("¿Qué es la Volatilidad?"):
-                    st.write("Desviación estándar móvil de 7 días.")
-                if vol.iloc[-1] > 0.2:
-                    st.warning("Alta volatilidad.")
-                elif vol.iloc[-1] < 0.05:
-                    st.info("Baja volatilidad.")
-                else:
-                    st.info("Volatilidad moderada.")
-    # Gráficos individuales
+    st.subheader("Indicadores Técnicos y KPIs")
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    def calc_change(series):
+        if len(series) < 2:
+            return None
+        cambio = series.iloc[-1] - series.iloc[-2]
+        cambio_pct = (cambio / series.iloc[-2]) * 100 if series.iloc[-2] != 0 else 0
+        return cambio, cambio_pct
+
+    # Precio Actual y cambio %
+    precio_actual = df_filtrado['Close AVAL'].dropna()
+    precio_val = precio_actual.iloc[-1] if not precio_actual.empty else None
+    precio_cambio = calc_change(precio_actual)
+
+    # Volatilidad 7d y cambio
+    vol_7d = df_filtrado['Volatility_7'].dropna() if 'Volatility_7' in df_filtrado else pd.Series(dtype=float)
+    vol_val = vol_7d.iloc[-1] if not vol_7d.empty else None
+    vol_cambio = calc_change(vol_7d)
+
+    # Media Móvil 21d y cambio
+    sma_21 = df_filtrado['SMA_21'].dropna() if 'SMA_21' in df_filtrado else pd.Series(dtype=float)
+    sma_val = sma_21.iloc[-1] if not sma_21.empty else None
+    sma_cambio = calc_change(sma_21)
+
+    # Retorno Acumulado y cambio
+    ret_acum = df_filtrado['Cumulative_Return'].dropna() if 'Cumulative_Return' in df_filtrado else pd.Series(dtype=float)
+    ret_val = ret_acum.iloc[-1] if not ret_acum.empty else None
+    ret_cambio = calc_change(ret_acum)
+
+    # RSI y cambio
+    rsi = df_filtrado['RSI'].dropna() if 'RSI' in df_filtrado else pd.Series(dtype=float)
+    rsi_val = rsi.iloc[-1] if not rsi.empty else None
+    rsi_cambio = calc_change(rsi)
+
+    def format_change(change_tuple, is_percent=False):
+        if change_tuple is None:
+            return None
+        val, pct = change_tuple
+        arrow = "▲" if val > 0 else ("▼" if val < 0 else "")
+        if is_percent:
+            return f"{arrow} {pct:.2f}%"
+        else:
+            return f"{arrow} {val:.4f}"
+
+    with col1:
+        if precio_val is not None:
+            st.metric("Precio Actual", f"${precio_val:.2f}", format_change(precio_cambio, True))
+        else:
+            st.write("Precio Actual: N/A")
+        st.caption("¿Qué es el Precio Actual?")
+
+    with col2:
+        if vol_val is not None:
+            st.metric("Volatilidad (7d)", f"{vol_val:.4f}", format_change(vol_cambio))
+        else:
+            st.write("Volatilidad (7d): N/A")
+        st.caption("¿Qué es la Volatilidad?")
+
+    with col3:
+        if sma_val is not None:
+            st.metric("Media Móvil (21d)", f"${sma_val:.2f}", format_change(sma_cambio))
+        else:
+            st.write("Media Móvil (21d): N/A")
+        st.caption("¿Qué es la Media Móvil?")
+
+    with col4:
+        if ret_val is not None:
+            st.metric("Retorno Acumulado", f"{ret_val:.2%}", format_change(ret_cambio, True))
+        else:
+            st.write("Retorno Acumulado: N/A")
+        st.caption("¿Qué es el Retorno Acumulado?")
+
+    with col5:
+        if rsi_val is not None:
+            st.metric("RSI", f"{rsi_val:.2f}", format_change(rsi_cambio))
+        else:
+            st.write("RSI: N/A")
+        st.caption("¿Qué es el RSI?")
+
+    # Indicadores técnicos existentes (RSI, Momentum, Volatilidad, etc.)
+    # RSI gráfico
     if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14 and not df_filtrado['RSI'].dropna().empty:
         fig_rsi = go.Figure()
         fig_rsi.add_trace(go.Scatter(
@@ -202,6 +228,7 @@ with tabs[1]:
         fig_rsi.add_hline(y=30, line_dash="dash", line_color="green")
         fig_rsi.update_layout(template='plotly_dark', yaxis_title='RSI', height=200)
         st.plotly_chart(fig_rsi, use_container_width=True)
+    # Momentum gráfico
     if show_momentum and 'Momentum' in df_filtrado and len(df_filtrado) >= 10 and not df_filtrado['Momentum'].dropna().empty:
         fig_mom = go.Figure()
         fig_mom.add_trace(go.Scatter(
@@ -212,6 +239,7 @@ with tabs[1]:
         ))
         fig_mom.update_layout(template='plotly_dark', yaxis_title='Momentum', height=200)
         st.plotly_chart(fig_mom, use_container_width=True)
+    # Volatilidad gráfico
     if show_vol and 'Volatility_7' in df_filtrado and len(df_filtrado) >= 7 and not df_filtrado['Volatility_7'].dropna().empty:
         fig_vol = go.Figure()
         fig_vol.add_trace(go.Scatter(
@@ -222,6 +250,7 @@ with tabs[1]:
         ))
         fig_vol.update_layout(template='plotly_dark', yaxis_title='Volatilidad (7d)', height=200)
         st.plotly_chart(fig_vol, use_container_width=True)
+    # Volumen gráfico
     if show_volume and 'Volume AVAL' in df_filtrado and not df_filtrado['Volume AVAL'].dropna().empty:
         fig_volu = go.Figure()
         fig_volu.add_trace(go.Bar(

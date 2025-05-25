@@ -5,3 +5,4 @@ streamlit
 plotly
 yfinance>=0.1.64
 joblib
+statsmodels

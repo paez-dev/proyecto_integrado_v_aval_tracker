@@ -5,30 +5,39 @@ import os
 
 class DataEnricher:
     def __init__(self, input_file):
-        # Definir rutas relativas
         self.input_path = os.path.join('src', 'static', 'data', input_file)
         self.df = pd.read_csv(self.input_path)
         self.df['Date'] = pd.to_datetime(self.df['Date'])
 
     def add_temporal_features(self):
-        """Añade características temporales"""
         self.df['Day_of_Week'] = self.df['Date'].dt.day_name()
         self.df['Month'] = self.df['Date'].dt.month
         self.df['Year'] = self.df['Date'].dt.year
         self.df['Quarter'] = self.df['Date'].dt.quarter
 
     def add_technical_indicators(self):
-        """Añade indicadores técnicos"""
         # Medias móviles
         self.df['SMA_7'] = self.df['Adj Close AVAL'].rolling(window=7).mean()
         self.df['SMA_21'] = self.df['Adj Close AVAL'].rolling(window=21).mean()
+        self.df['SMA_50'] = self.df['Adj Close AVAL'].rolling(window=50).mean()
+        self.df['SMA_100'] = self.df['Adj Close AVAL'].rolling(window=100).mean()
+        self.df['SMA_200'] = self.df['Adj Close AVAL'].rolling(window=200).mean()
 
-        # Volatilidad
+        # Volatilidad (desviación estándar móvil)
         self.df['Volatility_7'] = self.df['Adj Close AVAL'].rolling(window=7).std()
+        self.df['Volatility_14'] = self.df['Adj Close AVAL'].rolling(window=14).std()
+        self.df['Volatility_30'] = self.df['Adj Close AVAL'].rolling(window=30).std()
+
+        # Desviación estándar global
+        self.df['Std_Adj_Close'] = self.df['Adj Close AVAL'].expanding().std()
 
         # Retornos
         self.df['Daily_Return'] = self.df['Adj Close AVAL'].pct_change()
         self.df['Cumulative_Return'] = (1 + self.df['Daily_Return']).cumprod()
+
+        # Tasa de variación absoluta y porcentual
+        self.df['Price_Change'] = self.df['Adj Close AVAL'].diff()
+        self.df['Price_Change_Pct'] = self.df['Adj Close AVAL'].pct_change() * 100
 
         # RSI
         delta = self.df['Adj Close AVAL'].diff()
@@ -46,8 +55,10 @@ class DataEnricher:
         self.df['BB_upper'] = self.df['BB_middle'] + (std_dev * 2)
         self.df['BB_lower'] = self.df['BB_middle'] - (std_dev * 2)
 
+        # Media móvil de volumen
+        self.df['Volume_MA_21'] = self.df['Volume AVAL'].rolling(window=21).mean()
+
     def enrich_data(self, output_file):
-        """Ejecuta todo el proceso de enriquecimiento"""
         self.add_temporal_features()
         self.add_technical_indicators()
 
@@ -62,19 +73,22 @@ class DataEnricher:
 
 def main():
     try:
-        # Ejecutar el enriquecimiento
         enricher = DataEnricher('historical.csv')
         enriched_df = enricher.enrich_data('enriched_historical.csv')
 
-        # Mostrar las nuevas columnas y primeras filas
         print("\nColumnas en el dataset enriquecido:")
         print(enriched_df.columns.tolist())
         print("\nPrimeras filas del dataset enriquecido:")
         print(enriched_df.head())
 
-        # Mostrar estadísticas básicas de los nuevos indicadores
         print("\nEstadísticas de los nuevos indicadores:")
-        new_indicators = ['SMA_7', 'SMA_21', 'Volatility_7', 'Daily_Return', 'RSI', 'Momentum']
+        new_indicators = [
+            'SMA_7', 'SMA_21', 'SMA_50', 'SMA_100', 'SMA_200',
+            'Volatility_7', 'Volatility_14', 'Volatility_30',
+            'Std_Adj_Close', 'Daily_Return', 'Cumulative_Return',
+            'Price_Change', 'Price_Change_Pct', 'RSI', 'Momentum',
+            'BB_middle', 'BB_upper', 'BB_lower', 'Volume_MA_21'
+        ]
         print(enriched_df[new_indicators].describe())
 
         print("\nProceso de enriquecimiento completado exitosamente.")

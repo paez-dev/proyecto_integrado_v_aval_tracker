@@ -16,6 +16,7 @@ setup(
         'plotly',
         "joblib",
         "yfinance>=0.1.64",  # Necesario para descargar datos de Yahoo Finance
+        "statsmodels",
     ],
     python_requires=">=3.6",  # Indica la versión mínima de Python
 )

@@ -242,16 +242,19 @@ with tabs[2]:
         else:
             sma21 = df_filtrado['SMA_21']
             sma50 = df_filtrado['SMA_50']
-            cruces = np.where((sma21.shift(1) < sma50.shift(1)) & (sma21 > sma50), "Compra",
-                              np.where((sma21.shift(1) > sma50.shift(1)) & (sma21 < sma50), "Venta", None))
-            cruces_idx = df_filtrado.index[~pd.isnull(cruces)]
-            if len(cruces_idx) > 0:
-                last_idx = cruces_idx[-1]
-                st.info(f"Última señal de cruce de medias: {df_filtrado.loc[last_idx, 'Date'].date()} → **{cruces[last_idx]}**")
+            cruces = np.where(
+                (sma21.shift(1) < sma50.shift(1)) & (sma21 > sma50), "Compra",
+                np.where((sma21.shift(1) > sma50.shift(1)) & (sma21 < sma50), "Venta", None)
+            )
+            cruces_pos = np.where(~pd.isnull(cruces))[0]
+            if len(cruces_pos) > 0:
+                last_pos = cruces_pos[-1]
+                st.info(f"Última señal de cruce de medias: {df_filtrado.iloc[last_pos]['Date'].date()} → **{cruces[last_pos]}**")
             else:
                 st.write("No hay señales recientes de cruce de medias.")
     else:
         st.info("Activa ambas SMAs y selecciona al menos 51 días para ver señales de cruce de medias móviles.")
+
     # RSI sobrecompra/sobreventa
     if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14 and not df_filtrado['RSI'].dropna().empty:
         rsi = df_filtrado['RSI']
@@ -261,6 +264,7 @@ with tabs[2]:
             st.warning(f"Última sobrecompra RSI: {df_filtrado.loc[sobrecompra.index[-1], 'Date'].date()} (RSI={sobrecompra.iloc[-1]:.2f})")
         if not sobreventa.empty:
             st.success(f"Última sobreventa RSI: {df_filtrado.loc[sobreventa.index[-1], 'Date'].date()} (RSI={sobreventa.iloc[-1]:.2f})")
+
     # Bandas de Bollinger
     if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado and len(df_filtrado) >= 21 and not df_filtrado['BB_upper'].dropna().empty and not df_filtrado['BB_lower'].dropna().empty:
         precio = df_filtrado['Adj Close AVAL']

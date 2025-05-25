@@ -14,6 +14,7 @@ setup(
         'scikit-learn',
         'streamlit',
         'plotly',
+        'matplotlib',
         "joblib",
         "yfinance>=0.1.64",  # Necesario para descargar datos de Yahoo Finance
         "statsmodels",

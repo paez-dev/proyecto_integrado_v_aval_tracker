@@ -9,18 +9,27 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-# --- Funciones principales ---
+# --- Función robusta para obtener la serie con índice de fechas ---
+def obtener_serie_con_indice_fecha(df, columna='Adj Close AVAL', columna_fecha='Date'):
+    # Si el índice ya es de fechas, úsalo
+    if isinstance(df.index, pd.DatetimeIndex):
+        serie = df[columna].dropna()
+    # Si hay columna de fecha, úsala como índice
+    elif columna_fecha in df.columns:
+        df[columna_fecha] = pd.to_datetime(df[columna_fecha])
+        df = df.set_index(columna_fecha)
+        serie = df[columna].dropna()
+    else:
+        raise ValueError("No se encontró un índice de fechas ni una columna de fechas.")
+    # Asegura que el índice es de fechas
+    if not isinstance(serie.index, pd.DatetimeIndex):
+        serie.index = pd.to_datetime(serie.index)
+    return serie
 
 def cargar_datos(ruta_archivo='historical.csv'):
     """Carga y prepara los datos desde un archivo CSV."""
     df = pd.read_csv(ruta_archivo)
-    df['Date'] = pd.to_datetime(df['Date'])
-    df.set_index('Date', inplace=True)
     return df
-
-def obtener_serie(df, columna='Adj Close AVAL'):
-    """Extrae la serie temporal de interés."""
-    return df[columna].dropna()
 
 def entrenar_arima(serie, order=(3,1,1)):
     """Entrena un modelo ARIMA con los parámetros especificados."""
@@ -85,7 +94,7 @@ def ejecutar_arima_completo(
 ):
     """Ejecuta el flujo completo de ARIMA, guarda modelo y métricas, y retorna resultados."""
     df = cargar_datos(ruta_archivo)
-    serie = obtener_serie(df, columna)
+    serie = obtener_serie_con_indice_fecha(df, columna)
     modelo = entrenar_arima(serie, order)
     pred, forecast, next_date = predecir_arima(modelo, serie)
     mae, rmse, mape, r2 = calcular_metricas(serie[1:], pred)
@@ -99,7 +108,10 @@ def ejecutar_arima_completo(
     print(f"\n📅 Predicción para el siguiente día ({next_date.date()}): {forecast.values[0]:.4f}")
 
     if guardar:
-        guardar_modelo(modelo, 'src/static/models/arima_model.pkl')
+        modelo_path = 'src/static/models/arima_model.pkl'
+        if os.path.exists(modelo_path):
+            os.remove(modelo_path)
+        guardar_modelo(modelo, modelo_path)
         guardar_metricas(mae, rmse, mape, r2, 'src/static/models/arima_metrics.csv')
 
     return {

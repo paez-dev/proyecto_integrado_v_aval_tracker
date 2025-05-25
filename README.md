@@ -86,7 +86,7 @@ proyecto_integrado_v_aval_tracker/
    ```
 
 3. **Automatización con GitHub Actions**:  
-   GitHub ejecuta el flujo `.github/workflows/update_data.yml` diariamente a las 12:00 UTC.  
+   GitHub ejecuta el flujo `.github/workflows/update_data.yml` diariamente a las 21:10 UTC (4:10 p.m. Colombia).  
    Los datos se actualizan en `historical.csv`, los logs detallados se guardan en `text_logs/` y el resumen tabular en `log_data.csv`.
 
 ---

@@ -144,75 +144,125 @@ with tabs[1]:
         cambio_pct = (cambio / series.iloc[-2]) * 100 if series.iloc[-2] != 0 else 0
         return cambio, cambio_pct
 
-    # Precio Actual y cambio %
+    # Obtener valores y cambios
     precio_actual = df_filtrado['Close AVAL'].dropna()
     precio_val = precio_actual.iloc[-1] if not precio_actual.empty else None
     precio_cambio = calc_change(precio_actual)
 
-    # Volatilidad 7d y cambio
     vol_7d = df_filtrado['Volatility_7'].dropna() if 'Volatility_7' in df_filtrado else pd.Series(dtype=float)
     vol_val = vol_7d.iloc[-1] if not vol_7d.empty else None
     vol_cambio = calc_change(vol_7d)
 
-    # Media Móvil 21d y cambio
     sma_21 = df_filtrado['SMA_21'].dropna() if 'SMA_21' in df_filtrado else pd.Series(dtype=float)
     sma_val = sma_21.iloc[-1] if not sma_21.empty else None
     sma_cambio = calc_change(sma_21)
 
-    # Retorno Acumulado y cambio
     ret_acum = df_filtrado['Cumulative_Return'].dropna() if 'Cumulative_Return' in df_filtrado else pd.Series(dtype=float)
     ret_val = ret_acum.iloc[-1] if not ret_acum.empty else None
     ret_cambio = calc_change(ret_acum)
 
-    # RSI y cambio
     rsi = df_filtrado['RSI'].dropna() if 'RSI' in df_filtrado else pd.Series(dtype=float)
     rsi_val = rsi.iloc[-1] if not rsi.empty else None
     rsi_cambio = calc_change(rsi)
 
-    def format_change(change_tuple, is_percent=False):
-        if change_tuple is None:
-            return None
-        val, pct = change_tuple
-        arrow = "▲" if val > 0 else ("▼" if val < 0 else "")
-        if is_percent:
-            return f"{arrow} {pct:.2f}%"
-        else:
-            return f"{arrow} {val:.4f}"
+    def format_arrow(val):
+        if val is None:
+            return ""
+        return "▲" if val > 0 else ("▼" if val < 0 else "")
 
+    def format_delta(val, is_percent=False):
+        if val is None:
+            return None
+        return f"{val:.2f}%" if is_percent else f"{val:.4f}"
+
+    # Precio Actual
     with col1:
         if precio_val is not None:
-            st.metric("Precio Actual", f"${precio_val:.2f}", format_change(precio_cambio, True))
+            st.metric(
+                "Precio Actual",
+                f"${precio_val:.2f}",
+                delta=format_delta(precio_cambio[1], True)
+            )
+            st.markdown(f"<span style='font-size:20px;color:{'green' if precio_cambio and precio_cambio[0] > 0 else 'red' if precio_cambio and precio_cambio[0] < 0 else 'black'}'>{format_arrow(precio_cambio[0])}</span>", unsafe_allow_html=True)
         else:
             st.write("Precio Actual: N/A")
-        st.caption("¿Qué es el Precio Actual?")
+        with st.expander("¿Qué es el Precio Actual?"):
+            st.write("El precio actual es el último precio de cierre registrado para la acción AVAL.")
 
+    # Volatilidad 7d
     with col2:
         if vol_val is not None:
-            st.metric("Volatilidad (7d)", f"{vol_val:.4f}", format_change(vol_cambio))
+            st.metric(
+                "Volatilidad (7d)",
+                f"{vol_val:.4f}",
+                delta=format_delta(vol_cambio[0])
+            )
+            st.markdown(f"<span style='font-size:20px;color:{'green' if vol_cambio and vol_cambio[0] > 0 else 'red' if vol_cambio and vol_cambio[0] < 0 else 'black'}'>{format_arrow(vol_cambio[0])}</span>", unsafe_allow_html=True)
         else:
             st.write("Volatilidad (7d): N/A")
-        st.caption("¿Qué es la Volatilidad?")
+        with st.expander("¿Qué es la Volatilidad?"):
+            st.write("La volatilidad mide la desviación estándar móvil de 7 días del precio ajustado.")
+            if vol_val is not None:
+                if vol_val > 0.2:
+                    st.warning("Alta volatilidad: el precio puede ser muy inestable.")
+                elif vol_val < 0.05:
+                    st.info("Baja volatilidad: el precio es relativamente estable.")
+                else:
+                    st.info("Volatilidad moderada.")
 
+    # Media Móvil 21d
     with col3:
         if sma_val is not None:
-            st.metric("Media Móvil (21d)", f"${sma_val:.2f}", format_change(sma_cambio))
+            st.metric(
+                "Media Móvil (21d)",
+                f"${sma_val:.2f}",
+                delta=format_delta(sma_cambio[0])
+            )
+            st.markdown(f"<span style='font-size:20px;color:{'green' if sma_cambio and sma_cambio[0] > 0 else 'red' if sma_cambio and sma_cambio[0] < 0 else 'black'}'>{format_arrow(sma_cambio[0])}</span>", unsafe_allow_html=True)
         else:
             st.write("Media Móvil (21d): N/A")
-        st.caption("¿Qué es la Media Móvil?")
+        with st.expander("¿Qué es la Media Móvil?"):
+            st.write("La media móvil suaviza el precio para identificar tendencias a corto plazo.")
 
+    # Retorno Acumulado
     with col4:
         if ret_val is not None:
-            st.metric("Retorno Acumulado", f"{ret_val:.2%}", format_change(ret_cambio, True))
+            st.metric(
+                "Retorno Acumulado",
+                f"{ret_val:.2%}",
+                delta=format_delta(ret_cambio[1], True)
+            )
+            st.markdown(f"<span style='font-size:20px;color:{'green' if ret_cambio and ret_cambio[0] > 0 else 'red' if ret_cambio and ret_cambio[0] < 0 else 'black'}'>{format_arrow(ret_cambio[0])}</span>", unsafe_allow_html=True)
         else:
             st.write("Retorno Acumulado: N/A")
-        st.caption("¿Qué es el Retorno Acumulado?")
+        with st.expander("¿Qué es el Retorno Acumulado?"):
+            st.write("El retorno acumulado es la ganancia o pérdida total desde el inicio del período.")
+            if ret_val is not None:
+                if ret_val > 0:
+                    st.success("Retorno positivo: ganancia acumulada.")
+                else:
+                    st.error("Retorno negativo: pérdida acumulada.")
 
+    # RSI
     with col5:
         if rsi_val is not None:
-            st.metric("RSI", f"{rsi_val:.2f}", format_change(rsi_cambio))
+            st.metric(
+                "RSI",
+                f"{rsi_val:.2f}",
+                delta=format_delta(rsi_cambio[1], True)
+            )
+            st.markdown(f"<span style='font-size:20px;color:{'green' if rsi_cambio and rsi_cambio[0] > 0 else 'red' if rsi_cambio and rsi_cambio[0] < 0 else 'black'}'>{format_arrow(rsi_cambio[0])}</span>", unsafe_allow_html=True)
         else:
             st.write("RSI: N/A")
-        st.caption("¿Qué es el RSI?")
+        with st.expander("¿Qué es el RSI?"):
+            st.write("El RSI mide la fuerza y velocidad de los movimientos de precio.")
+            if rsi_val is not None:
+                if rsi_val > 70:
+                    st.warning("RSI alto: posible sobrecompra.")
+                elif rsi_val < 30:
+                    st.success("RSI bajo: posible sobreventa.")
+                else:
+                    st.info("RSI en zona neutral.")
 
     # Indicadores técnicos existentes (RSI, Momentum, Volatilidad, etc.)
     # RSI gráfico

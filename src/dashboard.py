@@ -34,7 +34,13 @@ except Exception as e:
 # --- SIDEBAR ---
 st.sidebar.header("Filtros")
 min_date, max_date = df['Date'].min(), df['Date'].max()
-date_range = st.sidebar.date_input("Rango de fechas", [min_date, max_date], min_value=min_date, max_value=max_date)
+date_range = st.sidebar.date_input(
+    "Rango de fechas",
+    value=[min_date, max_date],
+    min_value=min_date,
+    max_value=max_date
+)
+
 show_sma21 = st.sidebar.checkbox("Mostrar SMA 21", value=True)
 show_sma50 = st.sidebar.checkbox("Mostrar SMA 50", value=False)
 show_bb = st.sidebar.checkbox("Mostrar Bandas de Bollinger", value=False)
@@ -43,10 +49,20 @@ show_momentum = st.sidebar.checkbox("Mostrar Momentum", value=False)
 show_vol = st.sidebar.checkbox("Mostrar Volatilidad (7d)", value=False)
 show_volume = st.sidebar.checkbox("Mostrar Volumen", value=False)
 
+# --- MANEJO ROBUSTO DEL RANGO DE FECHAS ---
+# date_range puede ser una lista/tupla de 2 fechas o una sola fecha
+if isinstance(date_range, (list, tuple)) and len(date_range) == 2:
+    start_date, end_date = date_range
+elif isinstance(date_range, (pd.Timestamp, )):
+    start_date = end_date = date_range
+else:
+    st.warning("Por favor selecciona un rango válido de fechas.")
+    st.stop()
+
 # Filtrar el dataframe
 df_filtrado = df[
-    (df['Date'] >= pd.to_datetime(date_range[0])) &
-    (df['Date'] <= pd.to_datetime(date_range[1]))
+    (df['Date'] >= pd.to_datetime(start_date)) &
+    (df['Date'] <= pd.to_datetime(end_date))
 ].copy()
 
 if df_filtrado.empty:

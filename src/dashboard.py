@@ -224,24 +224,28 @@ with tabs[1]:
         with st.expander("¿Qué es la Media Móvil?"):
             st.write("La media móvil suaviza el precio para identificar tendencias a corto plazo.")
 
-    # Retorno Acumulado
+    # Retorno Acumulado con dividendos
+    ret_acum = df_filtrado['Total_Cumulative_Return'].dropna() if 'Total_Cumulative_Return' in df_filtrado else pd.Series(dtype=float)
+    ret_val = ret_acum.iloc[-1] if not ret_acum.empty else None
+    ret_cambio = calc_change(ret_acum)
+
     with col4:
         if ret_val is not None:
             st.metric(
-                "Retorno Acumulado",
-                f"{ret_val:.2%}",
+                "Retorno Acumulado (con dividendos)",
+                f"{(ret_val - 1) * 100:.2f}%",
                 delta=format_delta(ret_cambio[1], True)
             )
             st.markdown(f"<span style='font-size:20px;color:{'green' if ret_cambio and ret_cambio[0] > 0 else 'red' if ret_cambio and ret_cambio[0] < 0 else 'black'}'>{format_arrow(ret_cambio[0])}</span>", unsafe_allow_html=True)
         else:
             st.write("Retorno Acumulado: N/A")
         with st.expander("¿Qué es el Retorno Acumulado?"):
-            st.write("El retorno acumulado es la ganancia o pérdida total desde el inicio del período.")
+            st.write("El retorno acumulado total incluye la ganancia o pérdida del precio más los dividendos pagados reinvertidos.")
             if ret_val is not None:
-                if ret_val > 0:
-                    st.success("Retorno positivo: ganancia acumulada.")
+                if ret_val > 1:
+                    st.success("Retorno positivo: ganancia acumulada incluyendo dividendos.")
                 else:
-                    st.error("Retorno negativo: pérdida acumulada.")
+                    st.error("Retorno negativo: pérdida acumulada incluyendo dividendos.")
 
     # RSI
     with col5:

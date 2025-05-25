@@ -4,8 +4,6 @@ Este proyecto tiene como objetivo automatizar la recolección continua de datos 
 
 ---
 
----
-
 ## 📌 Características
 
 - 🔄 **Automatización diaria con GitHub Actions**: Los datos se actualizan automáticamente cada día a las 21:10 UTC (4:10 p.m. Colombia).  
@@ -19,8 +17,6 @@ Este proyecto tiene como objetivo automatizar la recolección continua de datos 
 - 🤖 **Modelado y predicción con ARIMA**: Implementación del modelo ARIMA para análisis de series temporales y predicción, gestionado en `arima_model.py` y almacenado en la carpeta `models/`.  
 - 📊 **Dashboard interactivo con Streamlit**: Visualización dinámica y análisis de datos históricos, indicadores y predicciones en `dashboard.py`.  
 - 📦 **Distribución del paquete con `setup.py`**: Estructura lista para instalación local/remota como paquete Python.
-
----
 
 ---
 

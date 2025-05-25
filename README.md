@@ -4,16 +4,23 @@ Este proyecto tiene como objetivo automatizar la recolección continua de datos 
 
 ---
 
+---
+
 ## 📌 Características
 
-- 🔄 **Automatización diaria con GitHub Actions**: Los datos se actualizan automáticamente cada día a las 12:00 UTC.
-- 📊 **Almacenamiento histórico en CSV**: Los datos se mantienen en formato CSV para facilitar su análisis.
-- 🧾 **Sistema dual de logging**:
-  - 📁 Archivos `.log` por ejecución en `text_logs/`, con registros detallados y timestamp.
-  - 📋 Archivo `log_data.csv` estructurado, útil para análisis tabular y trazabilidad resumida, gestionado por `csv_logger.py`.
-- 🧱 **Implementación con Programación Orientada a Objetos (OOP)**: El código se organiza utilizando principios de OOP.
-- 🧪 **Recolector de datos con `yfinance` y `pandas`**: Descarga automática desde Yahoo Finanzas.
+- 🔄 **Automatización diaria con GitHub Actions**: Los datos se actualizan automáticamente cada día a las 21:10 UTC (4:10 p.m. Colombia).  
+- 📊 **Almacenamiento histórico en CSV**: Los datos se mantienen en formato CSV para facilitar su análisis.  
+- 🧾 **Sistema dual de logging**:  
+  - 📁 Archivos `.log` por ejecución en `text_logs/`, con registros detallados y timestamp.  
+  - 📋 Archivo `log_data.csv` estructurado, útil para análisis tabular y trazabilidad resumida, gestionado por `csv_logger.py`.  
+- 🧱 **Implementación con Programación Orientada a Objetos (OOP)**: El código se organiza utilizando principios de OOP.  
+- 🧪 **Recolector de datos con `yfinance` y `pandas`**: Descarga automática desde Yahoo Finanzas.  
+- 📈 **Enriquecimiento de datos con indicadores técnicos y KPIs**: Cálculo automático de medias móviles, RSI, bandas de Bollinger, volatilidad, momentum, entre otros, mediante `enricher.py`.  
+- 🤖 **Modelado y predicción con ARIMA**: Implementación del modelo ARIMA para análisis de series temporales y predicción, gestionado en `arima_model.py` y almacenado en la carpeta `models/`.  
+- 📊 **Dashboard interactivo con Streamlit**: Visualización dinámica y análisis de datos históricos, indicadores y predicciones en `dashboard.py`.  
 - 📦 **Distribución del paquete con `setup.py`**: Estructura lista para instalación local/remota como paquete Python.
+
+---
 
 ---
 

@@ -49,68 +49,75 @@ df_filtrado = df[
     (df['Date'] <= pd.to_datetime(date_range[1]))
 ].copy()
 
+if df_filtrado.empty:
+    st.warning("No hay datos para el rango de fechas seleccionado. Por favor, elige un rango diferente.")
+    st.stop()
+
 # --- TABS ---
 tabs = st.tabs(["📈 Gráfico de Precio", "📊 Indicadores", "🚦 Señales", "🧮 Métricas"])
 
 # --- TAB 1: Gráfico de Precio ---
 with tabs[0]:
     st.subheader("Precio y Medias Móviles")
-    fig = go.Figure()
-    fig.add_trace(go.Candlestick(
-        x=df_filtrado['Date'],
-        open=df_filtrado['Open AVAL'],
-        high=df_filtrado['High AVAL'],
-        low=df_filtrado['Low AVAL'],
-        close=df_filtrado['Close AVAL'],
-        name='OHLC'
-    ))
-    # SMA 21
-    if show_sma21 and 'SMA_21' in df_filtrado:
-        if len(df_filtrado) < 21:
-            st.info("Selecciona al menos 21 días para ver la SMA 21.")
-        else:
-            fig.add_trace(go.Scatter(
-                x=df_filtrado['Date'],
-                y=df_filtrado['SMA_21'],
-                name='SMA 21',
-                line=dict(color='orange')
-            ))
-    # SMA 50
-    if show_sma50 and 'SMA_50' in df_filtrado:
-        if len(df_filtrado) < 50:
-            st.info("Selecciona al menos 50 días para ver la SMA 50.")
-        else:
-            fig.add_trace(go.Scatter(
-                x=df_filtrado['Date'],
-                y=df_filtrado['SMA_50'],
-                name='SMA 50',
-                line=dict(color='green')
-            ))
-    # Bandas de Bollinger
-    if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado:
-        if len(df_filtrado) < 21:
-            st.info("Selecciona al menos 21 días para ver las Bandas de Bollinger.")
-        else:
-            fig.add_trace(go.Scatter(
-                x=df_filtrado['Date'],
-                y=df_filtrado['BB_upper'],
-                name='Banda Superior',
-                line=dict(color='lightblue', dash='dot')
-            ))
-            fig.add_trace(go.Scatter(
-                x=df_filtrado['Date'],
-                y=df_filtrado['BB_lower'],
-                name='Banda Inferior',
-                line=dict(color='lightblue', dash='dot')
-            ))
-    fig.update_layout(
-        template='plotly_dark',
-        xaxis_title='Fecha',
-        yaxis_title='Precio',
-        xaxis=dict(rangeslider=dict(visible=True), type="date"),
-        height=500
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    if df_filtrado.empty:
+        st.info("No hay datos para mostrar el gráfico de precios.")
+    else:
+        fig = go.Figure()
+        fig.add_trace(go.Candlestick(
+            x=df_filtrado['Date'],
+            open=df_filtrado['Open AVAL'],
+            high=df_filtrado['High AVAL'],
+            low=df_filtrado['Low AVAL'],
+            close=df_filtrado['Close AVAL'],
+            name='OHLC'
+        ))
+        # SMA 21
+        if show_sma21 and 'SMA_21' in df_filtrado:
+            if len(df_filtrado.dropna(subset=['SMA_21'])) < 1 or len(df_filtrado) < 21:
+                st.info("Selecciona al menos 21 días para ver la SMA 21.")
+            else:
+                fig.add_trace(go.Scatter(
+                    x=df_filtrado['Date'],
+                    y=df_filtrado['SMA_21'],
+                    name='SMA 21',
+                    line=dict(color='orange')
+                ))
+        # SMA 50
+        if show_sma50 and 'SMA_50' in df_filtrado:
+            if len(df_filtrado.dropna(subset=['SMA_50'])) < 1 or len(df_filtrado) < 50:
+                st.info("Selecciona al menos 50 días para ver la SMA 50.")
+            else:
+                fig.add_trace(go.Scatter(
+                    x=df_filtrado['Date'],
+                    y=df_filtrado['SMA_50'],
+                    name='SMA 50',
+                    line=dict(color='green')
+                ))
+        # Bandas de Bollinger
+        if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado:
+            if len(df_filtrado.dropna(subset=['BB_upper', 'BB_lower'])) < 1 or len(df_filtrado) < 21:
+                st.info("Selecciona al menos 21 días para ver las Bandas de Bollinger.")
+            else:
+                fig.add_trace(go.Scatter(
+                    x=df_filtrado['Date'],
+                    y=df_filtrado['BB_upper'],
+                    name='Banda Superior',
+                    line=dict(color='lightblue', dash='dot')
+                ))
+                fig.add_trace(go.Scatter(
+                    x=df_filtrado['Date'],
+                    y=df_filtrado['BB_lower'],
+                    name='Banda Inferior',
+                    line=dict(color='lightblue', dash='dot')
+                ))
+        fig.update_layout(
+            template='plotly_dark',
+            xaxis_title='Fecha',
+            yaxis_title='Precio',
+            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            height=500
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 # --- TAB 2: Indicadores ---
 with tabs[1]:
@@ -122,7 +129,9 @@ with tabs[1]:
             rsi = df_filtrado['RSI'].dropna()
             if len(rsi) < 14:
                 st.info("Selecciona al menos 14 días para ver el RSI.")
-            elif not rsi.empty:
+            elif rsi.empty:
+                st.info("No hay datos suficientes para mostrar el RSI.")
+            else:
                 st.metric("RSI", f"{rsi.iloc[-1]:.2f}")
                 with st.expander("¿Qué es el RSI?"):
                     st.write("Mide la fuerza y velocidad de los movimientos de precio. Sobre 70: sobrecompra. Bajo 30: sobreventa.")
@@ -138,7 +147,9 @@ with tabs[1]:
             mom = df_filtrado['Momentum'].dropna()
             if len(mom) < 10:
                 st.info("Selecciona al menos 10 días para ver el Momentum.")
-            elif not mom.empty:
+            elif mom.empty:
+                st.info("No hay datos suficientes para mostrar el Momentum.")
+            else:
                 st.metric("Momentum", f"{mom.iloc[-1]:.4f}")
                 with st.expander("¿Qué es el Momentum?"):
                     st.write("Mide la velocidad del cambio de precio. Positivo: tendencia alcista. Negativo: bajista.")
@@ -154,7 +165,9 @@ with tabs[1]:
             vol = df_filtrado['Volatility_7'].dropna()
             if len(vol) < 7:
                 st.info("Selecciona al menos 7 días para ver la Volatilidad (7d).")
-            elif not vol.empty:
+            elif vol.empty:
+                st.info("No hay datos suficientes para mostrar la Volatilidad.")
+            else:
                 st.metric("Volatilidad (7d)", f"{vol.iloc[-1]:.4f}")
                 with st.expander("¿Qué es la Volatilidad?"):
                     st.write("Desviación estándar móvil de 7 días.")
@@ -165,7 +178,7 @@ with tabs[1]:
                 else:
                     st.info("Volatilidad moderada.")
     # Gráficos individuales
-    if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14:
+    if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14 and not df_filtrado['RSI'].dropna().empty:
         fig_rsi = go.Figure()
         fig_rsi.add_trace(go.Scatter(
             x=df_filtrado['Date'],
@@ -177,7 +190,7 @@ with tabs[1]:
         fig_rsi.add_hline(y=30, line_dash="dash", line_color="green")
         fig_rsi.update_layout(template='plotly_dark', yaxis_title='RSI', height=200)
         st.plotly_chart(fig_rsi, use_container_width=True)
-    if show_momentum and 'Momentum' in df_filtrado and len(df_filtrado) >= 10:
+    if show_momentum and 'Momentum' in df_filtrado and len(df_filtrado) >= 10 and not df_filtrado['Momentum'].dropna().empty:
         fig_mom = go.Figure()
         fig_mom.add_trace(go.Scatter(
             x=df_filtrado['Date'],
@@ -187,7 +200,7 @@ with tabs[1]:
         ))
         fig_mom.update_layout(template='plotly_dark', yaxis_title='Momentum', height=200)
         st.plotly_chart(fig_mom, use_container_width=True)
-    if show_vol and 'Volatility_7' in df_filtrado and len(df_filtrado) >= 7:
+    if show_vol and 'Volatility_7' in df_filtrado and len(df_filtrado) >= 7 and not df_filtrado['Volatility_7'].dropna().empty:
         fig_vol = go.Figure()
         fig_vol.add_trace(go.Scatter(
             x=df_filtrado['Date'],
@@ -197,7 +210,7 @@ with tabs[1]:
         ))
         fig_vol.update_layout(template='plotly_dark', yaxis_title='Volatilidad (7d)', height=200)
         st.plotly_chart(fig_vol, use_container_width=True)
-    if show_volume and 'Volume_AVAL' in df_filtrado:
+    if show_volume and 'Volume_AVAL' in df_filtrado and not df_filtrado['Volume_AVAL'].dropna().empty:
         fig_volu = go.Figure()
         fig_volu.add_trace(go.Bar(
             x=df_filtrado['Date'],
@@ -212,7 +225,7 @@ with tabs[2]:
     st.subheader("Resumen de Señales de Trading")
     # Cruce de medias móviles
     if show_sma21 and show_sma50 and 'SMA_21' in df_filtrado and 'SMA_50' in df_filtrado:
-        if len(df_filtrado) < 51:
+        if len(df_filtrado.dropna(subset=['SMA_21', 'SMA_50'])) < 51 or len(df_filtrado) < 51:
             st.info("Selecciona al menos 51 días para ver señales de cruce de medias móviles.")
         else:
             sma21 = df_filtrado['SMA_21']
@@ -226,7 +239,7 @@ with tabs[2]:
             else:
                 st.write("No hay señales recientes de cruce de medias.")
     # RSI sobrecompra/sobreventa
-    if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14:
+    if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14 and not df_filtrado['RSI'].dropna().empty:
         rsi = df_filtrado['RSI']
         sobrecompra = rsi[rsi > 70]
         sobreventa = rsi[rsi < 30]
@@ -235,7 +248,7 @@ with tabs[2]:
         if not sobreventa.empty:
             st.success(f"Última sobreventa RSI: {df_filtrado.loc[sobreventa.index[-1], 'Date'].date()} (RSI={sobreventa.iloc[-1]:.2f})")
     # Bandas de Bollinger
-    if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado and len(df_filtrado) >= 21:
+    if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado and len(df_filtrado) >= 21 and not df_filtrado['BB_upper'].dropna().empty and not df_filtrado['BB_lower'].dropna().empty:
         precio = df_filtrado['Adj Close AVAL']
         bb_upper = df_filtrado['BB_upper']
         bb_lower = df_filtrado['BB_lower']
@@ -252,18 +265,21 @@ with tabs[2]:
 with tabs[3]:
     st.subheader("Predicción ARIMA y Métricas del Modelo")
     try:
-        arima_model = joblib.load(MODEL_PATH)
         serie = df_filtrado.set_index('Date')['Adj Close AVAL'].dropna()
-        forecast = arima_model.forecast(steps=1)
-        last_date = serie.index[-1]
-        next_date = last_date + pd.Timedelta(days=1)
-        if next_date.weekday() == 5:
-            next_date += pd.Timedelta(days=2)
-        elif next_date.weekday() == 6:
-            next_date += pd.Timedelta(days=1)
-        st.success(f"Predicción para el {next_date.date()}: **${forecast.values[0]:.4f}**")
+        if len(serie) < 10:
+            st.info("Selecciona un rango de fechas mayor para realizar la predicción ARIMA.")
+        else:
+            arima_model = joblib.load(MODEL_PATH)
+            forecast = arima_model.forecast(steps=1)
+            last_date = serie.index[-1]
+            next_date = last_date + pd.Timedelta(days=1)
+            if next_date.weekday() == 5:
+                next_date += pd.Timedelta(days=2)
+            elif next_date.weekday() == 6:
+                next_date += pd.Timedelta(days=1)
+            st.success(f"Predicción para el {next_date.date()}: **${forecast.values[0]:.4f}**")
     except Exception as e:
-        st.error(f"Error al predecir con ARIMA: {e}")
+        st.info("No se pudo realizar la predicción ARIMA para el rango seleccionado.")
     try:
         metrics = pd.read_csv(METRICS_PATH)
         st.markdown("#### Métricas del Modelo ARIMA")
@@ -277,7 +293,7 @@ with tabs[3]:
         with col4:
             st.metric("R²", f"{metrics['R2'].iloc[0]:.4f}")
     except Exception as e:
-        st.error(f"Error al cargar las métricas: {e}")
+        st.info("No se pudieron cargar las métricas del modelo ARIMA.")
     with st.expander("ℹ️ Información del Dataset"):
         st.write("Estadísticas Descriptivas:")
         stats_df = df_filtrado.drop(columns=['Date']).describe()

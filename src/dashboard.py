@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import joblib
 import os
 import numpy as np
 import warnings
@@ -251,6 +250,8 @@ with tabs[2]:
                 st.info(f"Última señal de cruce de medias: {df_filtrado.loc[last_idx, 'Date'].date()} → **{cruces[last_idx]}**")
             else:
                 st.write("No hay señales recientes de cruce de medias.")
+    else:
+        st.info("Activa ambas SMAs y selecciona al menos 51 días para ver señales de cruce de medias móviles.")
     # RSI sobrecompra/sobreventa
     if show_rsi and 'RSI' in df_filtrado and len(df_filtrado) >= 14 and not df_filtrado['RSI'].dropna().empty:
         rsi = df_filtrado['RSI']

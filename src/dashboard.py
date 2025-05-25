@@ -59,65 +59,62 @@ tabs = st.tabs(["📈 Gráfico de Precio", "📊 Indicadores", "🚦 Señales", 
 # --- TAB 1: Gráfico de Precio ---
 with tabs[0]:
     st.subheader("Precio y Medias Móviles")
-    if df_filtrado.empty:
-        st.info("No hay datos para mostrar el gráfico de precios.")
-    else:
-        fig = go.Figure()
-        fig.add_trace(go.Candlestick(
-            x=df_filtrado['Date'],
-            open=df_filtrado['Open AVAL'],
-            high=df_filtrado['High AVAL'],
-            low=df_filtrado['Low AVAL'],
-            close=df_filtrado['Close AVAL'],
-            name='OHLC'
-        ))
-        # SMA 21
-        if show_sma21 and 'SMA_21' in df_filtrado:
-            if len(df_filtrado.dropna(subset=['SMA_21'])) < 1 or len(df_filtrado) < 21:
-                st.info("Selecciona al menos 21 días para ver la SMA 21.")
-            else:
-                fig.add_trace(go.Scatter(
-                    x=df_filtrado['Date'],
-                    y=df_filtrado['SMA_21'],
-                    name='SMA 21',
-                    line=dict(color='orange')
-                ))
-        # SMA 50
-        if show_sma50 and 'SMA_50' in df_filtrado:
-            if len(df_filtrado.dropna(subset=['SMA_50'])) < 1 or len(df_filtrado) < 50:
-                st.info("Selecciona al menos 50 días para ver la SMA 50.")
-            else:
-                fig.add_trace(go.Scatter(
-                    x=df_filtrado['Date'],
-                    y=df_filtrado['SMA_50'],
-                    name='SMA 50',
-                    line=dict(color='green')
-                ))
-        # Bandas de Bollinger
-        if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado:
-            if len(df_filtrado.dropna(subset=['BB_upper', 'BB_lower'])) < 1 or len(df_filtrado) < 21:
-                st.info("Selecciona al menos 21 días para ver las Bandas de Bollinger.")
-            else:
-                fig.add_trace(go.Scatter(
-                    x=df_filtrado['Date'],
-                    y=df_filtrado['BB_upper'],
-                    name='Banda Superior',
-                    line=dict(color='lightblue', dash='dot')
-                ))
-                fig.add_trace(go.Scatter(
-                    x=df_filtrado['Date'],
-                    y=df_filtrado['BB_lower'],
-                    name='Banda Inferior',
-                    line=dict(color='lightblue', dash='dot')
-                ))
-        fig.update_layout(
-            template='plotly_dark',
-            xaxis_title='Fecha',
-            yaxis_title='Precio',
-            xaxis=dict(rangeslider=dict(visible=True), type="date"),
-            height=500
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    fig = go.Figure()
+    fig.add_trace(go.Candlestick(
+        x=df_filtrado['Date'],
+        open=df_filtrado['Open AVAL'],
+        high=df_filtrado['High AVAL'],
+        low=df_filtrado['Low AVAL'],
+        close=df_filtrado['Close AVAL'],
+        name='OHLC'
+    ))
+    # SMA 21
+    if show_sma21 and 'SMA_21' in df_filtrado:
+        if len(df_filtrado.dropna(subset=['SMA_21'])) < 1 or len(df_filtrado) < 21:
+            st.info("Selecciona al menos 21 días para ver la SMA 21.")
+        else:
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['SMA_21'],
+                name='SMA 21',
+                line=dict(color='orange')
+            ))
+    # SMA 50
+    if show_sma50 and 'SMA_50' in df_filtrado:
+        if len(df_filtrado.dropna(subset=['SMA_50'])) < 1 or len(df_filtrado) < 50:
+            st.info("Selecciona al menos 50 días para ver la SMA 50.")
+        else:
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['SMA_50'],
+                name='SMA 50',
+                line=dict(color='green')
+            ))
+    # Bandas de Bollinger
+    if show_bb and 'BB_upper' in df_filtrado and 'BB_lower' in df_filtrado:
+        if len(df_filtrado.dropna(subset=['BB_upper', 'BB_lower'])) < 1 or len(df_filtrado) < 21:
+            st.info("Selecciona al menos 21 días para ver las Bandas de Bollinger.")
+        else:
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['BB_upper'],
+                name='Banda Superior',
+                line=dict(color='lightblue', dash='dot')
+            ))
+            fig.add_trace(go.Scatter(
+                x=df_filtrado['Date'],
+                y=df_filtrado['BB_lower'],
+                name='Banda Inferior',
+                line=dict(color='lightblue', dash='dot')
+            ))
+    fig.update_layout(
+        template='plotly_dark',
+        xaxis_title='Fecha',
+        yaxis_title='Precio',
+        xaxis=dict(rangeslider=dict(visible=True), type="date"),
+        height=500
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # --- TAB 2: Indicadores ---
 with tabs[1]:
@@ -266,6 +263,9 @@ with tabs[3]:
     st.subheader("Predicción ARIMA y Métricas del Modelo")
     try:
         serie = df_filtrado.set_index('Date')['Adj Close AVAL'].dropna()
+        # Asegura que el índice es de fechas
+        if not isinstance(serie.index, pd.DatetimeIndex):
+            serie.index = pd.to_datetime(serie.index)
         if len(serie) < 10:
             st.info("Selecciona un rango de fechas mayor para realizar la predicción ARIMA.")
         else:

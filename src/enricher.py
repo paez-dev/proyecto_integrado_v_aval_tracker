@@ -31,8 +31,18 @@ class DataEnricher:
         # Desviación estándar global
         self.df['Std_Adj_Close'] = self.df['Adj Close AVAL'].expanding().std()
 
-        # Retornos
+        # Retornos diarios del precio ajustado
         self.df['Daily_Return'] = self.df['Adj Close AVAL'].pct_change()
+
+        # Retorno total diario incluyendo dividendos en fechas específicas
+        self.df['Total_Daily_Return'] = self.df['Daily_Return'].fillna(0)
+        dividend_days = self.df['Dividends AVAL'] > 0
+        self.df.loc[dividend_days, 'Total_Daily_Return'] += self.df['Dividends AVAL'] / self.df['Adj Close AVAL'].shift(1)
+
+        # Retorno acumulado total con dividendos
+        self.df['Total_Cumulative_Return'] = (1 + self.df['Total_Daily_Return']).cumprod()
+
+        # Retorno acumulado solo con precio (como antes)
         self.df['Cumulative_Return'] = (1 + self.df['Daily_Return']).cumprod()
 
         # Tasa de variación absoluta y porcentual

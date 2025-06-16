@@ -68,7 +68,6 @@ proyecto_integrado_v_aval_tracker/
 │       └── update_data.yml               # GitHub Actions workflow para actualización automática
 │
 ├── docs/
-│   └── presentación.mp4                  # Presentación en video del proyecto
 │   └── report_entrega1.pdf               # Primer Informe en formato APA
 │   └── report_final.pdf                  # Informe Final en formato APA
 │

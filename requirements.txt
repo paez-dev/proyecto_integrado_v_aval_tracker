@@ -1,0 +1,10 @@
+pandas>=2.2.3
+numpy
+scikit-learn
+streamlit
+plotly
+yfinance>=0.1.64
+joblib
+matplotlib
+seaborn
+statsmodels

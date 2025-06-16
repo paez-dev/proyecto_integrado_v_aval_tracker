@@ -1,0 +1,52 @@
+name: Actualizar datos AVAL
+
+on:
+  schedule:
+    - cron: '10 21 * * *'  # Ejecuta todos los días a las 21:10 UTC (4:10 p.m. Colombia)
+  workflow_dispatch:  # Permite ejecutar el flujo de trabajo manualmente desde GitHub
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest  # Entorno donde se ejecuta el flujo de trabajo
+
+    steps:
+    - name: Paso 1.) Checkout del repositorio
+      uses: actions/checkout@v3  # Este paso descarga el código fuente del repositorio
+
+    - name: Paso 2.) Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'  # Configura Python 3.10
+
+    - name: Paso 3.) Instalar dependencias
+      run: |
+        pip install --upgrade pip
+        pip install .  # Instala dependencias del proyecto
+        pip install streamlit  # Instala streamlit para el dashboard
+
+    - name: Paso 4.) Ejecutar colector
+      run: python src/collector.py  # Ejecuta el script principal.
+
+    - name: Paso 5.) Ejecutar enriquecedor
+      run: python src/enricher.py
+
+    - name: Paso 6.) Ejecutar modelador
+      run: python src/modeller.py
+
+    - name: Paso 7.) Configurar Git
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+
+    - name: Paso 8.) Hacer commit y push de los cambios
+      run: |
+        git add -A src/logs/text_logs/
+        git add -A src/static/data/
+        git add -A src/static/models/
+        git add -A src/static/models/plots/
+        git add -A src/static/predictions/
+        git status
+        git commit -m "Actualización automática de datos AVAL" || echo "No changes to commit"
+        git push https://github.com/${{ github.repository }} HEAD:main
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
